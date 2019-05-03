@@ -1,0 +1,1617 @@
+---
+title             : '"What is the best method of family planning for me?": a text mining analysis of messages between users and agents of a digital health service in Kenya'
+shorttitle        : "Kenya SMS text mining"
+
+author: 
+  - name          : "Eric P. Green"
+    affiliation   : "1,2"
+    corresponding : yes    # Define only one corresponding author
+    address       : "Duke University, Duke Global Health Institute, Box 90519, Durham, NC, 27708, USA"
+    email         : "eric.green@duke.edu"
+  - name          : "Alexandra Whitcomb"
+    affiliation   : "2"
+  - name          : "Cynthia Kahumbura"
+    affiliation   : "4"
+  - name          : "Joseph G. Rosen"
+    affiliation   : "3"
+  - name          : "Siddhartha Goyal"
+    affiliation   : "2"
+  - name          : "Daphine Achieng"
+    affiliation   : "4"
+  - name          : "Ben Bellows"
+    affiliation   : "2,3"
+
+affiliation:
+  - id            : "1"
+    institution   : "Duke Global Health Institute"
+  - id            : "2"
+    institution   : "Nivi, Inc."
+  - id            : "3"
+    institution   : "Population Council"
+  - id            : "4"
+    institution   : "AskNivi Limited"
+
+authornote: |
+  Eric P. Green, Duke University, Duke Global Health Institute, Box 90519, Durham, NC, 27708, USA, eric.green@duke.edu
+  
+  Alexandra Whitcomb, Nivi, 40 Tall Pine Dr. Unit #11, Sudbury, MA. 01776, USA, alexcwhitcomb@gmail.com
+  
+  Cynthia Kahumbura, AskNivi Limited, Windsor House, University Way, PO Box 34430-00100 Nairobi, Kenya, cynthia@nivi.io
+  
+  Joseph G. Rosen, Plot #3670, No. 4 10101, Mwaleshi Rd, Lusaka, Zambia, joseph.gregory.rosen@gmail.com
+  
+  Siddhartha Goyal, Nivi, 40 Tall Pine Dr. Unit #11, Sudbury, MA. 01776, USA, sidd@nivi.io
+  
+  Daphine Achieng, AskNivi Limited, Windsor House, University Way, PO Box 34430-00100 Nairobi, Kenya, cynthia@nivi.io
+  
+  Ben Bellows, Population Council, 4301 Connecticut Ave NW # 280, Washington, DC 20008, USA, bbellows@popcouncil.org
+
+  Competing Interests: The Nivi affiliated authors all have a financial interest in the company Nivi that created the software that generated the data for this analysis.
+  
+  Grant Information: Merck for Mothers
+
+abstract: |
+  \noindent 
+  **Background**: Text message-based interventions have been shown to have consistently positive effects on health improvement and behavior change. Some studies suggest that personalization, tailoring, and interactivity can increase efficacy. With the rise in artificial intelligence and its incorporation into interventions, there is an opportunity to rethink how these characteristics are designed for greater effect. A key step in this process is to better understand how users engage with interventions. In this paper, we apply a text mining approach to characterize the ways that Kenyan men and women communicated with the first iterations of *askNivi*, a free sexual and reproductive health information service.
+  \newline
+  **Methods**: We tokenized and processed more than 179,000 anonymized messages that users exchanged with live agents, enabling us to count word frequency overall, by sex, and by age/sex cohorts. We also conducted two manual coding exercises: (1) We manually classified the intent of 3,834 user messages in a training dataset; and (2) We manually coded all conversations between a random subset of 100 users who engaged in extended chats.
+  \newline
+  **Results**: Between September 2017 and January 2019, 28,021 users (mean age 22.5 years, 63% female) sent 87,180 messages to *askNivi*, and 18 agents sent 92,429 replies. Users wrote most often about family planning methods, contraception, side effects, pregnancy, menstruation, and sex, but we observed different patterns by sex and age. User intents largely reflected the marketing focus on reproductive health, but other topics emerged. Most users sought factual information, but requests for advice and symptom reports were common. 
+  \newline
+  **Conclusions**: Young people in Kenya have a great desire for accurate and reliable information on health and wellbeing that is easy to access and trustworthy. Text mining is one way to better understand how users engage with interventions like *askNivi* and maximize what artificial intelligence has to offer.
+  
+keywords          : "digital health, reproductive health, SMS, text mining, Kenya"
+
+
+bibliography      : ["r-references.bib", "references.bib"]
+
+floatsintext      : yes
+figurelist        : no
+tablelist         : no
+footnotelist      : no
+linenumbers       : no
+mask              : no
+draft             : no
+note              : "\\clearpage"
+
+documentclass     : "apa6"
+classoption       : "man,noextraspace"
+header-includes:
+  - \usepackage{pdfpages}
+  - \usepackage{setspace}
+  - \usepackage{makecell}
+  - \usepackage{graphicx}
+  - \usepackage{booktabs}
+  - \usepackage{longtable}
+  - \usepackage{array}
+  - \usepackage{multirow}
+  - \usepackage{wrapfig}
+  - \usepackage{colortbl}
+  - \usepackage{pdflscape}
+  - \usepackage{tabu}
+  - \usepackage{threeparttable}
+  - \usepackage{threeparttablex}
+  - \usepackage[normalem]{ulem}
+  - \usepackage{makecell}
+  - \usepackage{xcolor}
+  - \AtBeginEnvironment{tabular}{\singlespacing}
+  - \makeatletter\let\expandableinput\@@input\makeatother
+  - \interfootnotelinepenalty=10000
+  - \usepackage{float} #use the 'float' package
+  - \floatplacement{figure}{H} #make every figure with caption = h
+  - \raggedbottom
+output            : papaja::apa6_pdf
+---
+
+```{r setup, include = FALSE}
+# packages
+  library(papaja)
+  library(MASS)
+  library(niviR)
+  library(tidyverse)
+  library(knitr)
+  library(gridExtra)
+  library(kableExtra)
+  library(magrittr)
+  library(alluvial)
+  library(ggrepel)
+  library(ggalt)
+  library(egg)
+  library(grid)
+  library(igraph)
+  library(ggraph)
+  library(widyr)
+
+# settings
+  nocomma <- function(x){structure(x,class="nocomma")}
+  knitr::knit_hooks$set(inline = function(x) {
+        if(!inherits(x,"nocomma")) return(prettyNum(x, big.mark=","))
+        if(inherits(x,"nocomma")) return(x)
+        return(x) # default
+      })
+  knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning=FALSE,
+                        include = FALSE)
+  
+# rounding functions to keep trailing zeros
+  rd0 <- function(y) sprintf("%.0f", round(y, 0))
+  rd1 <- function(y) sprintf("%.1f", round(y, 1))
+  rd2 <- function(y) sprintf("%.2f", round(y, 2))
+  rd3 <- function(y) sprintf("%.3f", round(y, 3))
+  
+# colors
+  source("colors.R")
+```
+
+```{r load}
+# metadata
+  df <- read.csv("input/metadata.csv", stringsAsFactors=FALSE)
+# word frequency
+  df_tok_bi_en <- read.csv("input/tok_bi_en.csv", stringsAsFactors=FALSE)
+  df_tok_en <- read.csv("input/tok_en.csv", stringsAsFactors=FALSE)
+  df_tok_sw <- read.csv("input/tok_sw.csv", stringsAsFactors=FALSE)
+  df_tok_en_g <- read.csv("input/tok_en_g.csv", stringsAsFactors=FALSE)
+  df_tok_en_m <- read.csv("input/tok_en_m.csv", stringsAsFactors=FALSE)
+  df_tok_en_f <- read.csv("input/tok_en_f.csv", stringsAsFactors=FALSE)
+  df_tok_en_wordUser <- read.csv("input/df_tok_en_wordUser.csv", stringsAsFactors=FALSE)
+# intents
+  intents <- read.csv("input/intents.csv", stringsAsFactors=FALSE)
+  marketed <- read.csv("input/marketed.csv", stringsAsFactors=FALSE)
+# conversations coded
+  convos_coded <- read.csv("input/convos_coded.csv", stringsAsFactors=FALSE)
+```
+
+
+# Introduction
+
+An active area of research and practice falling under the umbrella of digital health is the development and evaluation of mobile text message-based interventions for health improvement and behavior change. Health topics and behaviors targeted in these interventions have included disease management, medication adherence, smoking cessation, weight loss, sexual health, contraception, among many others [@hall:2015]. Until recently, the most common channel of communication in these interventions has been short message service, better known as SMS or text messaging, a feature available on all mobile phones, which lets users read and compose alphanumeric messages of up to 160 characters. Since at least 2015, however, mobile phone messaging applications such as WhatsApp and Facebook Messenger have eclipsed SMS in terms of daily message volume [@sparkes:2015; @perez:2016]. 
+
+Research findings pointing to the efficacy of text message-based interventions have been summarized in more than a dozen systematic reviews and meta-analyses, as well as several systematic reviews of reviews [@househ:2016; @hall:2015]. Meta-analyses have consistently reported average standardized effect sizes of 0.24 [0.16-0.32; @armanasco:2017], 0.29 [0.22-0.36; @orr:2015], and 0.33 [0.24-0.39; @head:2013] across prevention and health promotion interventions targeting diverse health topics. Given the low unit cost of communication via text message, these modest effect sizes suggest that text message-based interventions have the potential to be highly cost-effective.
+
+While the evidence is mixed [@armanasco:2017], several reviews report that intervention personalization (e.g., including a user's name), tailoring (e.g., outbound messages are determined by a user's previous responses), and interactivity (e.g., 2-way vs 1-way messaging) may boost the efficacy of these interventions [@hall:2015]. It is important to consider, however, that these findings represent an initial signal from *first generation* text message-based interventions. A *second generation* of interventions is emerging with the rapid integration of artificial intelligence (AI) into health applications, which could enable greater personalization, smarter tailoring, and more engaging interactivity [@usaid:2019; @wahl:2018; @shaban-nejad:2018].
+
+A well-known challenge to creating AI-informed applications for health is the need for large amounts of training data. A related challenge is that the training data must be relevant to the context of the intended end users. For instance, systems trained on data from US-based patients may not generalize to the needs of users living in low- and middle-income countries [@usaid:2019]. To create this new generation of applications that will benefit diverse populations, we should apply design thinking principles [@brown:2008] and seek to understand how users engage with our interventions.
+
+One approach for exploring and understanding user engagement is text mining. Text mining is the practice of using automated tools to examine large amounts of free-form text, summarize the contents, uncover interesting patterns, and generate new insights from the data. The most active areas of research in text mining for health have been the analysis of electronic medical records [@koleck:2019; @kreimeyer:2017] and social media messages [@sinnenberg:2017]. There have been few published analyses of 2-way communication transcripts. @ye:2010 published a systematic review of studies that examined e-mail communication between patients and providers. @blanc:2016 conducted a content analysis of messages that users in Nigeria sent to a sexual and reproductive health question and answer service called *MyQuestion*. Despite a large and growing body of evidence around the efficacy of text message-based interventions, there has been scant attention to the study of user engagement through text mining.
+
+In this paper, we conduct a text mining analysis of the inbound and outbound messages to *askNivi*, a free sexual and reproductive health information service currently operating in Kenya and India [@asknivi]. Users can send free-form messages to *askNivi* via SMS or Facebook Messenger and interact with automated conversation modules or live customer success agents. The aim of *askNivi* is to provide health information, referrals to health products and services, and encouragement to take action that will promote health and well-being. The objective of this analysis is to characterize the ways that Kenyan men and women communicated with the first iterations of *askNivi* about their health inquiries to inform future content development, tailoring, and automation.
+
+# Methods
+
+```{r msgTot}
+# total inbound messages
+  msgIn <- 
+  df %>%
+    filter(type=="user") %>%
+    count() 
+  
+# total outbound messages
+  msgOut <- 
+  df %>%
+    filter(type!="user") %>%
+    count() 
+  
+  msgTot <- msgIn + msgOut
+```
+
+The data for this secondary analysis comes from a query of the Kenya *askNivi* database for all valid inbound and outbound SMS messages handled by customer success agents between September 2017 and January 2019. The query resulted in `r msgTot` total messages (`r msgIn` inbound and `r msgOut` outbound). The data were anonymized prior to analysis. 
+
+## Language detection
+
+```{r langDetect}
+# language detection distribution
+  langDetectDist <- table(df$msgLang[df$type=="user"], useNA = "always") # 
+  noDetect <- as.numeric(langDetectDist[3])
+  noDetect_p <- (noDetect/sum(langDetectDist))*100
+  
+  ld_en <- rd0((langDetectDist[1]/sum(langDetectDist))*100)
+  ld_sw <- rd0((langDetectDist[2]/sum(langDetectDist))*100)
+  ld_mi <- rd0((langDetectDist[3]/sum(langDetectDist))*100)
+```
+
+We conducted all data processing and analysis in R version 3.5 [@R-base] and compiled this manuscript using the `papaja` package [v0.1.0.9842; @R-papaja]. To detect the language of each message, we used the `cld2` package [v1.2; @cld2] to access Google's Compact Language Detector 2 [@sites:2013], a Naïve Bayesian classifier that probabilistically detects 83 languages, including English and Swahili. The classifier detected that users sent `r ld_en`% of messages in English, `r ld_sw`% in Swahili, and failed to detect either language in `r ld_mi`% of incoming messages. When the language could not be automatically detected for a message, we set the missing language label to the dominant language detected in the user's inbound messages during the same calendar week. For instance, if a person sent 10 messages in one week (e.g., six English, two Swahili, and two with no language detected), we set the two missing language labels to English.
+
+```{r langDetectReplace, cache=TRUE}
+# set NA to the person's dominant language (empirical, not self-reported)
+  df %>%
+  # count majojrity language by user, year, and week
+    filter(!is.na(msgLang)) %>%
+    group_by(accountid, convoWeek, convoYear) %>%
+    count(msgLang) %>%
+    mutate(impute = n) %>%
+    dplyr::select(-n) %>%
+    arrange(accountid, convoYear, convoWeek, desc(impute)) %>%
+    {. ->> impute1} %>%
+  # when two languages are used by a user/year/week, keep dominant
+    distinct(accountid, convoYear, convoWeek, .keep_all = TRUE) %>%
+    {. ->> impute2}
+
+# get a mini df of "conversations" with one language
+  nodups <-
+  impute1 %>%
+    group_by(accountid, convoWeek, convoYear) %>%
+    tally() %>%
+    filter(n==1) %>%
+    mutate(id = paste0(accountid, convoYear, convoWeek))
+  
+# get a mini df of "conversations" with more than one language
+  dups <-
+  impute2 %>%
+    mutate(id = paste0(accountid, convoYear, convoWeek)) %>%
+    filter(!(id %in% nodups$id)) %>%
+    dplyr::select(-id)
+  
+# combine dfs
+  impute <- 
+  impute1 %>%
+    mutate(id = paste0(accountid, convoYear, convoWeek)) %>%
+    filter(id %in% nodups$id) %>%
+    bind_rows(dups) %>%
+    mutate(msgLangMaj = msgLang) %>%
+    dplyr::select(accountid, convoYear, convoWeek, msgLangMaj)
+  
+# merge back into main df
+ df <- 
+ df %>%
+   left_join(impute, by = c("accountid", "convoWeek", "convoYear")) %>%
+   mutate(msgLang_ = ifelse(is.na(msgLang), msgLangMaj, msgLang))
+```
+
+## Text mining
+
+We used the `tidytext` package [v0.2.0; @tidytext] to analyze word frequency and relationships in all inbound messages. The first step was to tokenize each message into its component words, strip all punctuation, and convert the tokens to lowercase. We filtered out 1149 English stop words (e.g., "a", "the", "and") from three lexicons compiled in the `tidytext` package and 74 Swahili stop words from a multi-language collection of stop words [@diaz:2017]. We added custom stop words to these lists for both languages based on our initial review of the tokens. See the data and code repository for a full list [@green:2019].
+
+Prior to counting the frequency of individual word tokens, we also tokenized each message by consecutive words to identify the most common bigrams. This allowed us to tally key terms as pairs rather than as individual words. For instance, when the word "family" immediately preceded the word "planning", we tallied "family" as part of the bigram "family planning". However, if "family" occurred on its own, e.g., "I do not want to start a family", then we tallied family as an individual term.
+
+We used the `hunspell` package [v3.0; @hunspell] to detect possible misspellings and suggest corrections but ultimately decided to only accept suggestions for English words that appeared fewer than four times in the corpus given our concerns about reliability. We did not accept any Swahili spelling suggestions.
+
+We used the `textstem` package [v0.1.4; @textstem] to conduct lemmatization on the English words and identify the base form of each word—its lemma. We opted to conduct lemmatization over stemming to avoid the creation of non-word stems. Following this process, we ran an initial word frequency count and conducted a manual review to identify synonyms that could be combined into one label [e.g., "period" and "menses" combined into "period"; @green:2019]. After combining like terms we conducted another frequency analysis to get the final count of each word or key bigram in the corpus of messages.
+
+## Intent analysis
+
+When a user sends a question or statement to *askNivi*, a natural language processing algorithm trained on past submissions classifies the user's intent. For instance, a user might send a message that reads, "I want to find a good method of family planning". The intent behind this question—what the user wants to know or do—is "find a method of contraception". To develop the training set to build a predictive model for automated intent classification, we built a simple web application that enabled our agents to read each question and manually label the intent [@green:2018]. Each question was presented for classification until two different agents agreed on the best intent label. Through this process we manually classified 3,303 English and Swahili language messages in the training dataset. In this paper we present a descriptive summary of user intent.
+
+## Conversation analysis
+
+To analyze the structure of extended exchanges between users and agents, we selected a random sample of 50 men and 50 women who sent at least seven English messages to *askNivi* during one calendar week. A member of the team read the collection of `r nrow(convos_coded)` messages and qualitatively coded the number of distinct conversations each user had with agents, the topics discussed in each conversation, and the message-level components of each exchange (e.g., questions, responses, greetings).
+
+## Preparation of data for sharing
+
+Anonymized message meta-data with calendar week time stamps is archived along with the tokenized word frequencies  [@green:2019]. To prevent accidental sharing of private information due to possible imperfect anonymization, we omitted terms that appear fewer than three times in the corpus. 
+
+## Ethical statement
+
+Our study protocol was screened by the Duke University Institutional Review Board and determined to be exempt from further review. 
+
+\newpage
+
+# Results
+
+## Descriptive summary of askNivi usage
+
+### Users
+
+```{r users}
+# total agents
+  agents_ct <- length(table(df$agent[df$type!="users"]))
+  
+# nurse replies
+  nurseReplies <- 
+  df %>%
+    filter(type!="user") %>%
+    summarise(per = (mean(nurse, na.rm=TRUE)*1))
+  
+# users
+  df_users <- 
+  df %>%
+    distinct(accountid, .keep_all = TRUE) %>%
+    {. ->> users} %>%
+    dplyr::select(accountid, gender, language, age) %>%
+    mutate(accountid = "unique users") %>%
+    mutate(age = ifelse(age>100, 100, age)) %>%
+    mutate(female = ifelse(gender=="man", 0, 1)) %>%
+    mutate(english = ifelse(language=="eng", 1, 0))
+  
+  tbl_users <- data.frame(Variable = c("Users, N",
+                                       "Female, %",
+                                       "Prefers English, %",
+                                       "Mean Age (SD)"),
+                          Values = c(prettyNum(nrow(users), big.mark=","),
+                                     rd1(mean(df_users$female, na.rm=TRUE)*100),
+                                     rd1(mean(df_users$english, na.rm=TRUE)*100),
+                                     paste0(rd1(mean(df_users$age, na.rm=TRUE)),
+                                            " (",
+                                            rd1(sd(df_users$age, na.rm=TRUE)),
+                                            ")")
+                                     ),
+                          Missing = c(prettyNum(rd0(0), big.mark=","),
+                                      prettyNum(rd0(sum(is.na(df_users$female))), 
+                                                big.mark=","),
+                                      prettyNum(rd0(sum(is.na(df_users$english))), 
+                                                big.mark=","),
+                                      prettyNum(rd0(sum(is.na(df_users$age))), 
+                                                big.mark=",")
+                          )
+  )
+```
+
+Between week `r substring(min(paste(df$convoYear, df$convoWeek)), 6, 7)` of `r nocomma(min(df$convoYear))` and week `r substring(max(paste(df$convoYear, df$convoWeek)), 6, 7)` of `r nocomma(max(df$convoYear))`, `r nrow(users)` users sent `r msgIn` messages to *askNivi*, and `r agents_ct` agents sent `r msgOut` replies. Questions that required input from a medical advisor were handled by nurses at a local maternity hospital. Nurse replies accounted for `r rd1(nurseReplies$per*100)`% of these outbound messages. Table \@ref(tab:usersTable) displays user characteristics. Nearly two-thirds of users were female, and roughly half indicated they preferred to receive messages in English. The average user was `r rd1(mean(df_users$age, na.rm=TRUE))` years old (SD=`r rd1(sd(df_users$age, na.rm=TRUE))`).
+
+```{r usersTable, include=TRUE, results='asis', echo=FALSE}
+  apa_table(
+    tbl_users, align = c("l", rep("r", 2)), 
+    caption = "Characteristics of users.",
+    placement = "H",
+    note =  "User sex was not routinely captured during the entire period covered by the dataset."
+  )
+```
+
+### Message-level language
+
+```{r ldmetrics, cache=TRUE}
+# language
+  langDist <- table(df$msgLang_[df$type=="user"], useNA = "always")
+  langEng_p <- rd0((langDist[1]/msgIn)*100)
+  langSwa_p <- rd0((langDist[2]/msgIn)*100)
+  langUn_p <- rd0((as.numeric(langDist[3])/msgIn)*100)
+
+# percent of users with any language discrepancy
+  usersWithLangDisc_p <- 
+  df %>%
+    filter(type=="user") %>%
+    filter(!is.na(msgLang_)) %>%
+    filter(!is.na(language)) %>%
+    group_by(accountid, msgLang_) %>%
+  # count number of messages by person/language
+    count(msgLang_) %>%
+    ungroup() %>%
+  # add back user defined language preference
+    right_join(distinct(dplyr::select(df, accountid, language), accountid, .keep_all = TRUE), 
+               by = "accountid") %>%
+  # create indicator of a difference between messages and preferred language
+    mutate(different = ifelse(language=="eng" & msgLang_=="sw" |
+                              language=="swa" & msgLang_=="en", 1, 0)) %>%
+    arrange(accountid, desc(different)) %>%
+    {. ->> langComparison} %>%
+    distinct(accountid, .keep_all = TRUE) %>%
+    summarize(mean = mean(different, na.rm = TRUE)*100) 
+
+# inbound messages with language discrepancy
+# count
+  msgLangDisc_ct <- 
+  langComparison %>%
+    filter(different == 1) %>%
+    summarise(count = sum(n, na.rm = TRUE))
+  
+# percentage inbound messages with language discrepancy
+  msgLangDisc_p <- rd0((msgLangDisc_ct/msgIn)*100)
+```
+
+Of the `r msgIn` inbound messages received by *askNivi*, `r langEng_p`% were written in English, `r langSwa_p`% in Swahili, and `r langUn_p`% messages could not be labeled after imputing the dominant language. Nearly one out of five users (`r rd0(as.numeric(usersWithLangDisc_p))`%) sent at least one message in a language that did not match their stated language preference, and `r msgLangDisc_p`% of all inbound messages were discordant in terms of a user's stated language preference and the detected language.
+
+### Patterns of engagement
+
+```{r msgInUser}
+# incoming messages by user
+  df %>%
+    filter(type=="user") %>%
+    group_by(accountid) %>%
+    tally() %>%
+    {. ->> msgInDist} 
+  
+  msgInUser_med <- rd1(quantile(msgInDist$n, .5))
+  msgInUser_m <- rd1(mean(msgInDist$n))
+  msgInUser_sd <- rd1(sd(msgInDist$n))
+  msgInUser_1p <- rd0((sum(msgInDist$n[msgInDist$n==1])/nrow(msgInDist))*100)
+```
+
+The median user sent `r msgInUser_med` messages during the period covered by the dataset (M=`r msgInUser_m`, SD=`r msgInUser_sd`). Inbound message volume fluctuated over time. Figure \@ref(fig:msgInWeek) shows a spike in total inbound message volume during the middle of 2018, followed by a dropoff that corresponded to an intentional pause in marketing of the service. *askNivi* ended the study period with roughly 2000 inbound messages per week. 
+
+```{r msgInWeek, fig.cap="Volume of inbound messages per week", include=TRUE, echo=FALSE}
+  df %>%
+    filter(type=="user") %>%
+    mutate(convoWeek = ifelse(nchar(convoWeek)==1, 
+                              paste0("0", convoWeek),
+                              convoWeek)) %>%
+    mutate(yearWeek = as.Date(paste0(convoYear, convoWeek, "1"), 
+                              "%Y%U%u")) %>%
+    #mutate(yearWeek = paste(convoYear, convoWeek, sep="-")) %>%
+    group_by(yearWeek) %>%
+    tally() %>%
+    {. ->> msgInWeekMed} %>%
+    ggplot(., aes(x=yearWeek, y=n)) +
+      geom_bar(stat="identity", fill = as.character(nivi_cols("mint"))) + 
+      theme_minimal() +
+      geom_hline(yintercept=as.numeric(quantile(msgInWeekMed$n, .5)), 
+                 color = as.character(nivi_cols("rose")),
+                 size = 1,
+                 linetype = "dotted") +
+      annotate(geom="text", 
+               y=quantile(msgInWeekMed$n, .5)+2, 
+               x=min(msgInWeekMed$yearWeek), 
+               label=paste0("Median=", 
+                            rd0(quantile(msgInWeekMed$n, .5))),
+               vjust = 2, hjust = 0, color=as.character(nivi_cols("rose"))) +
+      xlab("Weeks") +
+      ylab("Inbound messages") #+
+      #ggtitle("Total inbound messages per week")  
+```
+
+Figure \@ref(fig:convoAll) shows three main patterns in communication: `r knitr::load_cache("convoAll", "usersSROne_p")`% of users sent one message and received one reply (orange), `r knitr::load_cache("convoAll", "usersSMRO_p")`% sent multiple messages and received one reply (purple), and `r knitr::load_cache("convoAll", "usersSMRM_p")`% sent and received multiple messages (green). This pattern was broadly similar for women and men, but men were `r knitr::load_cache("convoAll", "sentOne_mf")` times as likely as women to send only one message to *askNivi*.
+
+```{r convoAll, cache=TRUE, fig.cap="Alluvial diagram of inbound and outbound messages.", include=TRUE, echo=FALSE}
+# users sent at least 1 message and received at least 1 message
+  users2wayConvos <-
+  df %>%
+    group_by(accountid, type) %>%
+  # count number of messages per user by type (agent, user)
+    tally() %>%                       
+    ungroup() %>%
+    group_by(accountid) %>% 
+    dplyr::select(accountid) %>%
+  # check for two-way conversations
+    tally() %>% 
+    filter(n==2) %>%  # sent at least 1 message and received at least 1 message
+    mutate(receivedReply = "Yes") %>%
+    dplyr::select(-n)
+
+# users sent more than 1 message
+  users2wayConvos_multipleS <-
+  df %>%
+    group_by(accountid, type) %>%
+  # count number of messages per user by type (agent, user)
+    tally() %>%      
+  # limit to sending more than 1 message and receiving a reply
+    filter((type=="user" & n>1) | type=="agent") %>%   
+    ungroup() %>%
+    group_by(accountid) %>% 
+    dplyr::select(accountid) %>%
+  # check for two-way conversations
+    tally() %>% 
+    filter(n==2) %>%   # inbound and outbound
+    mutate(sentMultiple = "Yes") %>%
+    dplyr::select(-n)
+  
+# users sent/received more than 1 message
+  users2wayConvos_multipleSR <-
+  df %>%
+    group_by(accountid, type) %>%
+  # count number of messages per user by type (agent, user)
+    tally() %>%      
+  # limit to sending and receiving more than 1 message
+    filter(n>1) %>%   
+    ungroup() %>%
+    group_by(accountid) %>% 
+    dplyr::select(accountid) %>%
+  # check for two-way conversations
+    tally() %>% 
+    filter(n==2) %>%   # inbound and outbound
+    mutate(sentReceivedMultiple = "Yes") %>%
+    dplyr::select(-n)
+  
+# prepare for alluvial diagram
+  convos_all <-
+  df %>%
+    distinct(accountid) %>% 
+    left_join(users2wayConvos, by="accountid") %>%
+    left_join(users2wayConvos_multipleS, by="accountid") %>%
+    left_join(users2wayConvos_multipleSR, by="accountid") %>%
+    replace(is.na(.), "No") %>%
+    group_by(receivedReply, sentMultiple, sentReceivedMultiple) %>%
+    summarise(n = n()) %>%
+    ungroup() 
+  
+# plot alluvial
+  convos_all_ <-
+  convos_all %>%
+    mutate(receivedReply = ifelse(receivedReply=="Yes", "Replied", "No Reply"),
+           sentMultiple = ifelse(sentMultiple=="Yes", "Multiple", "Single"),
+           sentReceivedMultiple = ifelse(sentReceivedMultiple=="Yes", "Multiple",
+                                  ifelse(sentReceivedMultiple=="No" &
+                                         receivedReply=="No Reply", "None", 
+                                         "Single"))) %>%
+    dplyr::select(sentMultiple, receivedReply, sentReceivedMultiple, n)
+  
+  alluvial(convos_all_[,1:3], freq=convos_all_$n,
+           col = ifelse(convos_all_$receivedReply == "No Reply", 
+                        "#D3D3D3",
+                        #as.character(nivi_cols("rose")),
+                 ifelse(convos_all_$sentReceivedMultiple == "Multiple" &
+                        convos_all_$sentMultiple == "Multiple", 
+                        as.character(nivi_cols("mint")),
+                 ifelse(convos_all_$sentReceivedMultiple == "Single" &
+                        convos_all_$sentMultiple == "Multiple", 
+                        as.character(nivi_cols("purple")),
+                 ifelse(convos_all_$sentReceivedMultiple == "Single" &
+                        convos_all_$sentMultiple == "Single", 
+                        as.character(nivi_cols("orange")),
+                        "#D3D3D3")))),
+           axis_labels = c("Inbound", 
+                           "Agent", 
+                           "Outbound"),
+           cex = 0.5,
+           cex.axis = 0.7,
+           blocks=TRUE)
+  
+# objects
+  usersReceivedReply_n <- sum(convos_all$n[convos_all$receivedReply=="Yes"])
+  usersReceivedReplyNO_n <- nrow(users)-usersReceivedReply_n
+  usersReceivedReply_p <- rd0((usersReceivedReply_n/nrow(users))*100)
+  usersReceivedReplyNO_p <- rd0((usersReceivedReplyNO_n/nrow(users))*100)
+  
+  
+  usersSROne_n <- sum(convos_all$n[convos_all$sentMultiple=="No" &
+                                   convos_all$sentReceivedMultiple=="No" &
+                                   convos_all$receivedReply=="Yes"  ])
+  usersSROne_p <- rd0((usersSROne_n/nrow(users))*100)
+  
+  usersSMRO_n <- sum(convos_all$n[convos_all$sentMultiple=="Yes" &
+                                  convos_all$sentReceivedMultiple=="No"])
+  usersSMRO_p <- rd0((usersSMRO_n/nrow(users))*100)
+  
+  usersSMRM_n <- sum(convos_all$n[convos_all$sentMultiple=="Yes" &
+                                  convos_all$sentReceivedMultiple=="Yes"])
+  usersSMRM_p <- rd0((usersSMRM_n/nrow(users))*100)
+  
+# sent 1 message
+  sentOne_gender <- 
+  df %>%
+    left_join(msgInDist, by="accountid") %>%
+    mutate(sentOne = ifelse(n==1, 1, 0)) %>%
+    filter(!is.na(gender)) %>%
+    group_by(gender) %>%
+    summarise(mean=mean(sentOne))
+  
+  sentOne_mf <- rd1(sentOne_gender$mean[sentOne_gender$gender=="man"]/sentOne_gender$mean[sentOne_gender$gender=="woman"])
+```
+
+\newpage
+
+## Text analysis
+
+Figure \@ref(fig:wfAll) shows the top 25 most frequently occurring pairs of adjacent words, or bigrams (LEFT), and single words (RIGHT) in English language messages sent to *askNivi*. Users wrote most often about family planning methods, contraception, side effects, pregnancy, menstruation, and sex.  
+
+```{r wfAll, fig.cap="Most frequently occurring bigrams (LEFT) and words (RIGHT) in incoming messages (English)", include=TRUE, echo=FALSE, fig.height=6.5}
+  p1 <-
+  df_tok_bi_en %>%
+    slice(1:25) %>%
+    ggplot(., aes(x = reorder(word, n), y = n)) +
+      #geom_bar(fill="#005BE7", stat = "identity") +
+      geom_point(size=2.5, color="#005BE7") +
+      geom_segment(aes(x=word,
+                       xend=word,
+                       y=0,
+                       yend=n),
+                   linetype = "dotted",
+                   color = "#005BE7") +
+      theme_classic() +
+      theme(axis.text.x = element_text(angle = 0, hjust = 1),
+            axis.title.y = element_blank(),
+            panel.grid.major = element_blank(),
+            panel.grid.minor = element_blank(),
+            legend.position = "top") +
+      # ylim(0,5) +
+      #xlab("Word") +
+      ylab("Count") +
+      #ggtitle("Word frequency in incoming messages (English)", subtitle = "All users") +
+      coord_flip()
+
+  p2 <-
+  df_tok_en %>%
+    slice(1:25) %>%
+    ggplot(., aes(x = reorder(word, n), y = n)) +
+      #geom_bar(fill="#005BE7", stat = "identity") +
+      geom_point(size=2.5, color="#005BE7") +
+      geom_segment(aes(x=word,
+                       xend=word,
+                       y=0,
+                       yend=n),
+                   linetype = "dotted",
+                   color = "#005BE7") +
+      theme_classic() +
+      theme(axis.text.x = element_text(angle = 0, hjust = 1),
+            axis.title.y = element_blank(),
+            panel.grid.major = element_blank(),
+            panel.grid.minor = element_blank(),
+            legend.position = "top") +
+      # ylim(0,5) +
+      #xlab("Word") +
+      ylab("Count") +
+      #ggtitle("Word frequency in incoming messages (English)", subtitle = "All users") +
+      coord_flip()
+  
+  grid.arrange(p1, p2, nrow = 1)
+```
+
+\newpage
+
+As Figure \@ref(fig:wfLang) shows, the most frequently used terms are broadly similar between English and Swahili messages. Eight of the top 10 English terms fell within the Swahili top 15 ranking.
+
+```{r wfLang, fig.cap="Rank order of the most common words used in incoming messages by language. This is a forced-rank chart because two words could have the same frequency of usage, but no ties are awarded.", fig.height=7, include=TRUE, echo=FALSE}
+
+  df_tok_sw_ <-
+  df_tok_sw %>%
+    mutate(msgLang = "Swahili") %>%
+    mutate(word = ifelse(word=="family planning", 
+                         "family planning (upangaji uzazi)", word)) %>%
+    mutate(word_ = word) %>%
+    mutate(word = trimws(gsub("\\(.*", "", word)), "right")
+
+  wordLang <-
+  df_tok_en %>%
+    mutate(msgLang = "English") %>%
+    bind_rows(df_tok_sw_) %>%
+    group_by(msgLang) %>%
+    arrange(msgLang, desc(n)) %>%
+    mutate(rank = 1:n()) 
+  
+  wordLangLow <- 
+  wordLang %>%
+    filter(msgLang=="English") %>%
+    filter(rank<=10)
+
+  wordLangHigh <- 
+  wordLang %>%
+    filter(msgLang=="Swahili") %>%
+    filter(rank<=10)
+  
+  wordLang_ <-
+  wordLang %>%
+    filter(word %in% wordLangLow$word |
+           word %in% wordLangHigh$word) 
+  
+# get rank order of words for low set
+  wordLangLowRank <- 
+  wordLang_ %>%
+    filter(msgLang=="English") %>%
+    arrange(rank) %>%
+    mutate(order = 1:n())
+  
+# plot
+# https://stackoverflow.com/a/55386207/841405
+  wordLang_ <- 
+  wordLang_ %>%
+    ungroup() %>%
+    mutate(word = factor(word, ordered = TRUE, levels = wordLangLowRank$word),
+           rank2 = reorder(rank, -rank) )
+
+  wordLang_ %>%
+  # https://ibecav.github.io/slopegraph/
+    ggplot(., aes(x = msgLang, y = as.numeric(rank2), group = word)) +
+    geom_line(aes(color = word, alpha = 1), size = 1.5) +
+    scale_color_nivi(palette = "purple",  discrete = TRUE) +
+    geom_label(aes(label = rank), 
+           size = 2.5, 
+           label.padding = unit(0.15, "lines"), 
+           label.size = 0.0) +
+    scale_x_discrete(position = "top", expand = c(0, .05) ) +
+    scale_y_continuous(breaks = filter(wordLang_, 
+                                       msgLang == "English") %>% 
+                                pull(rank2) %>% 
+                                as.numeric(), 
+                       labels = filter(wordLang_, msgLang == "English") %>% 
+                                pull(word),
+                       sec.axis = dup_axis(~., 
+                                           breaks = filter(wordLang_, 
+                                                           msgLang == "Swahili") %>% 
+                                                    pull(rank2) %>% 
+                                                    as.numeric(), 
+                                           labels = filter(wordLang_, 
+                                                           msgLang == "Swahili") %>% 
+                                                    pull(word_))) +
+    theme_bw() +
+    # Remove the legend
+    theme(legend.position = "none",
+          # Remove the panel border
+          panel.border     = element_blank(),
+          # Remove just about everything from the y axis
+          axis.title.y     = element_blank(),
+          panel.grid.major.y = element_blank(),
+          panel.grid.minor.y = element_blank(),
+          # Remove a few things from the x axis and increase font size
+          axis.title.x     = element_blank(),
+          panel.grid.major.x = element_blank(),
+          axis.text.x.top      = element_text(size=10),
+          # Remove x & y tick marks
+          axis.ticks       = element_blank(),
+          axis.ticks.length = unit(0, "cm"),
+          # Format title & subtitle
+          plot.title       = element_text(size=10, face = "bold", hjust = 0.5),
+          plot.subtitle    = element_text(hjust = 0.5) )
+```
+
+\newpage
+
+It is informative to examine differences in word frequency by sex and age. Figure \@ref(fig:wfAgeGenderM) presents age disaggregated data for men, and Figure \@ref(fig:wfAgeGenderF) presents age disaggregated data for women. An easy way to read these plots is to start at the top left, which represents the most frequent word used by adolescents. 
+
+In the case of Figure \@ref(fig:wfAgeGenderM), the most frequent English word used by adolescent boys was sex. Follow this line across to see that it remains the most frequent word used by men of all age categories. The same is not true for the word pregnant. "Pregnant" was the third most common word used by adolescent boys (as in preventing pregnancy), but it fell to eighth among men in their 20's and mid-30's, and all the way to a rank of 241 among older men. The chart can also be read from right to left starting with the most frequent terms used by older men and tracing back through younger age groups. Doing so reveals that cancer and prostate were frequent topics for older men, but less so among younger men.
+
+Figure \@ref(fig:wfAgeGenderF) presents the same ranking of English word frequency for female age groups. The terms 'period' and 'pregnant' were common topics across all female age categories. However, young women were much more likely to write about how to identify their safe and unsafe days compared to older women. Conversely, older women chatted more frequently about family planning, conception, and cancers of the breast and cervix. Compared to men, women chatted less about sex overall, and the frequency declined with age.
+
+```{r wfAgeGenderM, fig.cap="Rank order of the most common words used in incoming messages (English) by age category, men. This is a forced-rank chart because two words could have the same frequency of usage, but no ties are awarded.", fig.height=8, include=TRUE, echo=FALSE}
+  ageGenderM <-
+  df_tok_en_m %>%
+    group_by(genAge) %>%
+    arrange(genAge, desc(n)) %>%
+    mutate(rank = 1:n()) 
+
+  ageGenderMLow <- 
+  ageGenderM %>%
+    filter(genAge=="Men, 15-19") %>%
+    filter(rank<=10)
+
+  ageGenderMHigh <- 
+  ageGenderM %>%
+    filter(genAge=="Men, 36+") %>%
+    filter(rank<=10)
+  
+  ageGenderM_ <-
+  ageGenderM %>%
+    filter(word %in% ageGenderMLow$word |
+           word %in% ageGenderMHigh$word)
+  
+# get rank order of words for low set
+  ageGenderMLowRank <- 
+  ageGenderM_ %>%
+    filter(genAge=="Men, 15-19") %>%
+    arrange(rank) %>%
+    mutate(order = 1:n()) 
+  
+# plot
+# https://stackoverflow.com/a/55386207/841405
+  ageGenderM_ <- 
+  ageGenderM_ %>%
+    ungroup() %>%
+    mutate(word = factor(word, ordered = TRUE, levels = ageGenderMLowRank$word),
+           rank2 = reorder(rank, -rank) )
+
+  ageGenderM_ %>%
+  # https://ibecav.github.io/slopegraph/
+    ggplot(., aes(x = genAge, y = as.numeric(rank2), group = word)) +
+    geom_line(aes(color = word, alpha = 1), size = 1.5) +
+    scale_color_nivi(palette = "purple",  discrete = TRUE) +
+    geom_label(aes(label = rank), 
+           size = 2.5, 
+           label.padding = unit(0.15, "lines"), 
+           label.size = 0.0) +
+    scale_x_discrete(position = "top", expand = c(0, .05) ) +
+    scale_y_continuous(breaks = filter(ageGenderM_, 
+                                       genAge == "Men, 15-19") %>% 
+                                pull(rank2) %>% 
+                                as.numeric(), 
+                       labels = filter(ageGenderM_, genAge == "Men, 15-19") %>% 
+                                pull(word),
+                       sec.axis = dup_axis(~., 
+                                           breaks = filter(ageGenderM_, 
+                                                           genAge == "Men, 36+") %>% 
+                                                    pull(rank2) %>% 
+                                                    as.numeric(), 
+                                           labels = filter(ageGenderM_, 
+                                                           genAge == "Men, 36+") %>% 
+                                                    pull(word))) +
+    theme_bw() +
+    # Remove the legend
+    theme(legend.position = "none",
+          # Remove the panel border
+          panel.border     = element_blank(),
+          # Remove just about everything from the y axis
+          axis.title.y     = element_blank(),
+          panel.grid.major.y = element_blank(),
+          panel.grid.minor.y = element_blank(),
+          # Remove a few things from the x axis and increase font size
+          axis.title.x     = element_blank(),
+          panel.grid.major.x = element_blank(),
+          axis.text.x.top      = element_text(size=10),
+          # Remove x & y tick marks
+          axis.ticks       = element_blank(),
+          axis.ticks.length = unit(0, "cm"),
+          # Format title & subtitle
+          plot.title       = element_text(size=10, face = "bold", hjust = 0.5),
+          plot.subtitle    = element_text(hjust = 0.5) )
+```
+
+
+```{r wfAgeGenderF, fig.cap="Rank order of the most common words used in incoming messages (English) by age category, women. This is a forced-rank chart because two words could have the same frequency of usage, but no ties are awarded.", fig.height=8, include=TRUE, echo=FALSE}
+  ageGenderF <-
+  df_tok_en_f %>%
+    group_by(genAge) %>%
+    arrange(genAge, desc(n)) %>%
+    mutate(rank = 1:n()) 
+
+  ageGenderFLow <- 
+  ageGenderF %>%
+    filter(genAge=="Women, 15-19") %>%
+    filter(rank<=10)
+
+  ageGenderFHigh <- 
+  ageGenderF %>%
+    filter(genAge=="Women, 36+") %>%
+    filter(rank<=10)
+  
+  ageGenderF_ <-
+  ageGenderF %>%
+    filter(word %in% ageGenderFLow$word |
+           word %in% ageGenderFHigh$word)
+  
+# get rank order of words for low set
+  ageGenderFLowRank <- 
+  ageGenderF_ %>%
+    filter(genAge=="Women, 15-19") %>%
+    arrange(rank) %>%
+    mutate(order = 1:n())
+  
+# plot
+# https://stackoverflow.com/a/55386207/841405
+  ageGenderF_ <- 
+  ageGenderF_ %>%
+    ungroup() %>%
+    mutate(word = factor(word, ordered = TRUE, levels = ageGenderFLowRank$word),
+           rank2 = reorder(rank, -rank) )
+
+  ageGenderF_ %>%
+  # https://ibecav.github.io/slopegraph/
+    ggplot(., aes(x = genAge, y = as.numeric(rank2), group = word)) +
+    geom_line(aes(color = word, alpha = 1), size = 1.5) +
+    scale_color_nivi(palette = "purple", discrete = TRUE) +
+    geom_label(aes(label = rank), 
+           size = 2.5, 
+           label.padding = unit(0.15, "lines"), 
+           label.size = 0.0) +
+    scale_x_discrete(position = "top", expand = c(0, .05) ) +
+    scale_y_continuous(breaks = filter(ageGenderF_, 
+                                       genAge == "Women, 15-19") %>% 
+                                pull(rank2) %>% 
+                                as.numeric(), 
+                       labels = filter(ageGenderF_, genAge == "Women, 15-19") %>% 
+                                pull(word),
+                       sec.axis = dup_axis(~., 
+                                           breaks = filter(ageGenderF_, 
+                                                           genAge == "Women, 36+") %>% 
+                                                    pull(rank2) %>% 
+                                                    as.numeric(), 
+                                           labels = filter(ageGenderF_, 
+                                                           genAge == "Women, 36+") %>% 
+                                                    pull(word))) +
+    theme_bw() +
+    # Remove the legend
+    theme(legend.position = "none",
+          # Remove the panel border
+          panel.border     = element_blank(),
+          # Remove just about everything from the y axis
+          axis.title.y     = element_blank(),
+          panel.grid.major.y = element_blank(),
+          panel.grid.minor.y = element_blank(),
+          # Remove a few things from the x axis and increase font size
+          axis.title.x     = element_blank(),
+          panel.grid.major.x = element_blank(),
+          axis.text.x.top      = element_text(size=10),
+          # Remove x & y tick marks
+          axis.ticks       = element_blank(),
+          axis.ticks.length = unit(0, "cm"),
+          # Format title & subtitle
+          plot.title       = element_text(size=10, face = "bold", hjust = 0.5),
+          plot.subtitle    = element_text(hjust = 0.5) )
+```
+
+\newpage
+
+Figure \@ref(fig:bigramGraph) visualizes common English bigrams as a network graph. The points (nodes) represent words, the lines (edges) represent the most frequent connections between words, and the arrows indicate the temporal ordering of the words. For instance, several words ('unprotected', 'safe', 'oral', and 'play'), point to the word 'sex', reflecting the different ways that users chatted about sex. The word 'prevent' bridges two topic clusters that people want to avoid: pregnancy and HIV. For instance, users asked "How can i prevent unwanted pregnancies?" and "Is the use of condoms during sex completely prevent any HIV infection??".
+
+In addition to exploring the relationships between pairs of adjacent words, we also examine how English words co-occur in conversations, regardless of their position in individual messages. Figure \@ref(fig:wordCor) shows the words that are most associated with several key terms such as 'contraception' and 'period'. For instance, when asking about contraception and method options, users often want to know about side effects and to learn which methods are effective. Conversations about periods often involve descriptive words like 'irregular', 'normal', and 'pain', and include questions about the possibility of pregnancy with missed periods. For instance, users asked questions like, "Why are my periods irregular?" and "What are some ways that can reduce abdominal pains during menstrual periods?".
+
+```{r bigramGraph, fig.cap="Network graph of most frequent English bigrams. The points (nodes) represent words, the lines (edges) represent the most frequent connections between words, and the arrows indicate the temporal ordering of the words.", include=TRUE, echo=FALSE, fig.height=8, fig.width=8}
+  bigram_graph <- 
+  df_tok_bi_en %>%
+    filter(n > 25) %>%
+    separate(word, c("word1", "word2"), sep = " ") %>% 
+    graph_from_data_frame()
+
+  set.seed(2016)
+
+  a <- grid::arrow(type = "closed", length = unit(.1, "inches"),
+                   angle = 20)
+  
+  ggraph(bigram_graph, layout = "fr") +
+    geom_edge_link(aes(edge_alpha = n), show.legend = FALSE,
+                   arrow = a, end_cap = circle(.03, 'inches')) +
+    geom_node_point(color = "#4FBFA5", size = 2.5) +
+    geom_node_text(aes(label = name), vjust = 1, hjust = 1, repel = TRUE,
+                   color="#403e3e", segment.alpha=0.2)  +
+                   #nudge_x = -0.1, nudge_y = -0.1) +
+    theme_graph()
+```
+
+
+```{r wordCor, include=TRUE, echo=FALSE, fig.height=8, fig.cap="Top pairwise correlations (phi) between English words."}
+  word_cors <- 
+  df_tok_en_wordUser %>%
+    pairwise_cor(word, accountid, sort = TRUE) %>%
+    filter(item1 %in% c("contraception/method", "sex", "period", "pregnant", 
+                        "family planning", "effect/side effect")) %>%
+    group_by(item1) %>%
+    top_n(10) %>%
+    ungroup() %>%
+    arrange(item1, correlation) %>%
+    mutate(order = row_number())
+
+  ggplot(word_cors, aes(x = order, correlation)) + 
+    #geom_col(fill="#4FBFA5") + 
+    geom_point(size=2.5, color="#4FBFA5") +
+      geom_segment(aes(x=order,
+                       xend=order,
+                       y=0,
+                       yend=correlation),
+                   linetype = "dotted",
+                   color = "#4FBFA5") +
+    theme_classic() +
+    theme(axis.title.y=element_blank()) + 
+    facet_wrap(~ item1, scales = "free", ncol=2) + 
+    scale_x_continuous(
+      breaks = word_cors$order,
+      labels = word_cors$item2
+    ) +     
+    ylab("Correlation Coefficient") +
+    coord_flip()
+```
+
+
+## Intent analysis
+
+In order to build a training dataset that would enable automated classification of user intent, we manually classified a subset of `r rd0(sum(marketed$n))` initial utterances from users (English and Swahili). Figure \@ref(fig:intentMarketed) displays the distribution of intents and indicates whether the intent was part of an *askNivi* marketing campaign. This figure shows that the most frequent intents were related to contraception, a major focus of *askNivi* marketing. It also shows, however, that users asked questions on topics that *askNivi* was not marketing at the time, including sexually transmitted infections, symptoms, sexual health, and relationships.
+
+```{r intentMarketed, fig.cap="Distribution of classified intents by marketing history.", include=TRUE, echo=FALSE, fig.height=6}
+  marketed %>%
+    ggplot(., aes(x = reorder(class, n), y = prop, fill=marketed, color=marketed)) +
+      #geom_bar(stat = "identity") +
+      geom_point(size=2.5) +
+      geom_segment(aes(x=class,
+                       xend=class,
+                       y=0,
+                       yend=prop),
+                   linetype = "dotted") +
+      scale_fill_manual(values = c("#F17DB1", "#4FBFA5")) +
+      scale_color_manual(values = c("#F17DB1", "#4FBFA5")) +
+      theme_minimal() +
+      theme(axis.text.x = element_text(angle = 0, hjust = 1),
+            panel.grid.major = element_blank(),
+            panel.grid.minor = element_blank(),
+            legend.position = "top") +
+      ylim(0,25) +
+      xlab("Intent") +
+      ylab("Percent") +
+      coord_flip()
+```
+
+*askNivi* was initially marketed to adolescent girls and young women, but a high demand among men led to an expansion of the intended market audience. Figure \@ref(fig:intentGender) shows the distribution of user intent by sex. Compared to women, men were more interested in questions related to sexual health, relationships, and sexually transmitted infections. However, overall, contraception was still the dominant theme among men and women.
+
+```{r intentGender, fig.cap="Distribution of classified intents by gender.", include=TRUE, echo=FALSE, fig.height=6}
+  intents %>%
+    group_by(gender, class) %>%
+    count(class) %>%
+    ungroup() %>%
+    group_by(gender) %>%
+    mutate(prop = (n/sum(n))*100) %>%
+    ungroup() %>%
+    dplyr::select(-n) %>%
+    {. ->> long} %>%
+    spread(gender, prop, fill = 0) %>%
+    mutate(class = reorder(class, woman)) %>%
+    {. ->> wide}
+
+  long <- 
+    long %>%
+    mutate(class = factor(class, levels=levels(wide$class)))
+  
+    ggplot(wide, aes(y = class)) +
+      geom_point(data = long, aes(x = prop, color = gender)) +
+      geom_dumbbell(aes(x = woman, xend = man),
+                    size=2.5, 
+                    color="#e3e2e1", 
+                    colour_x = "#812990", 
+                    colour_xend = "#F37021",
+                    dot_guide=TRUE, 
+                    dot_guide_size=0.25) + 
+      theme_minimal() +
+      scale_color_manual(name = "", values = c("#F37021", "#812990")) +
+      theme(axis.text.x = element_text(angle = 0, hjust = 1),
+            panel.grid.major = element_blank(),
+            panel.grid.minor = element_blank(),
+            legend.position = "top") +
+      ylab("Intent") +
+      xlab("Percent") 
+```
+
+\newpage
+
+## Conversation analysis
+
+```{r convosAll}
+# subset age
+  convos_ageM <- rd1(mean(convos_coded$age, na.rm=TRUE))
+  convos_ageSD <- rd1(sd(convos_coded$age, na.rm=TRUE))
+  
+# conversations
+  convos_des <- 
+  convos_coded %>%
+    group_by(accountid, convoID) %>%
+    count() %>%
+    group_by(accountid) %>%
+    count() %>%
+    ungroup() %>%
+    summarise(total = sum(n, na.rm=TRUE), 
+              mean = mean(n, na.rm=TRUE), 
+              sd = sd(n, na.rm=TRUE),
+              median = median(n, na.rm=TRUE))
+  
+# messages per conversation
+  convos_msg <- 
+  convos_coded %>%
+    group_by(accountid, convoID) %>%
+    count() %>%
+    ungroup() %>%
+    summarise(total = sum(n, na.rm=TRUE), 
+              mean = mean(n, na.rm=TRUE), 
+              sd = sd(n, na.rm=TRUE),
+              median = median(n, na.rm=TRUE))
+  
+# messages by type
+  convos_msgtype <- 
+  convos_coded %>%
+    group_by(accountid, convoID, type) %>%
+    count() %>%
+    group_by(type) %>%
+    summarise(total = sum(n, na.rm=TRUE), 
+              mean = mean(n, na.rm=TRUE), 
+              sd = sd(n, na.rm=TRUE),
+              median = median(n, na.rm=TRUE))
+  
+# topics per conversation
+  convos_topics <-
+  convos_coded %>%
+    group_by(accountid, convoID, topic) %>%
+    count() %>%
+    group_by(accountid, convoID) %>%
+    count() %>%
+    ungroup() %>%
+    summarise(mean = mean(n, na.rm=TRUE), 
+              sd = sd(n, na.rm=TRUE),
+              median = median(n, na.rm=TRUE))
+  
+# questions per conversation
+  convos_q <-
+  convos_coded %>%
+    filter(type=="user") %>%
+    group_by(accountid, convoID, qualCode) %>%
+    count() %>%
+    group_by(accountid, convoID) %>%
+    mutate(msg = sum(n)) %>%
+    ungroup() %>%
+    mutate(p = (n/msg)*100) %>%
+    #filter(qualCode=="question") %>%
+    group_by(qualCode) %>%
+    summarise(mean = mean(p, na.rm=TRUE), 
+              sd = sd(p, na.rm=TRUE),
+              median = median(p, na.rm=TRUE))
+```
+
+```{r convosTopics}
+# number of conversations with more than one topic
+  convos_topics_multiple <- 
+  convos_coded %>%
+    group_by(accountid, convoID, topic) %>%
+    count() %>%
+    group_by(accountid, convoID) %>%
+    count() %>%
+    filter(n>1) %>%
+    ungroup() %>%
+    count()
+
+# count co-occurrence of topics in convos 
+  convos_topics_pairs <- 
+  convos_coded %>% 
+    #dplyr::select(-n) %>%
+    full_join(convos_coded, by=c("accountid", "convoID")) %>% 
+    group_by(topic.x, topic.y) %>% 
+    summarise(n = length(unique(paste0(accountid, convoID)))) %>% 
+    filter(topic.x!=topic.y) %>%
+    mutate(topic = paste(topic.x, topic.y, sep=", "))
+  
+  convos_topics_pairs_n <-
+    expand.grid(topic.x = unique(convos_coded$topic),
+                topic.y = unique(convos_coded$topic)) %>% 
+    filter(as.numeric(topic.x) < as.numeric(topic.y)) %>% 
+    mutate(topic = paste(topic.x, topic.y, sep = ', ')) %>% 
+    arrange(topic.x, topic.y) %>% 
+    left_join(convos_topics_pairs) %>% 
+    mutate(n = replace(n, is.na(n), 0)) %>%
+    arrange(desc(n))
+  
+  convos_topics_topics_n <-
+    expand.grid(topic.x = unique(convos_coded$topic),
+                topic.y = unique(convos_coded$topic)) %>% 
+    #filter(as.numeric(topic.x) < as.numeric(topic.y)) %>% 
+    mutate(topic = paste(topic.x, topic.y, sep = ', ')) %>% 
+    arrange(topic.x, topic.y) %>% 
+    left_join(convos_topics_pairs) %>% 
+    mutate(n = replace(n, is.na(n), 0)) %>%
+    group_by(topic.x) %>%
+    summarise(appear = sum(n)) %>%
+    ungroup() %>%
+    arrange(desc(appear))
+```
+
+We manually coded `r nrow(convos_coded)` English language messages exchanged between *askNivi* agents and 100 users (50 men, 50 women) selected at random from the pool of high-engagement users. The average age of this subset of users was `r convos_ageM` years (SD=`r convos_ageSD`). Table \@ref(tab:convosGenAge) summarizes key characteristics of these conversations.
+
+```{r convosGender}
+# N, gen
+  convos_all_n <-
+  convos_coded %>%
+    distinct(accountid) %>%
+    count()
+
+# N, gender
+  convos_gen_n <-
+  convos_coded %>%
+    group_by(gender) %>%
+    distinct(accountid) %>%
+    count()
+
+# conversations
+  convos_des_gen <- 
+  convos_coded %>%
+    group_by(gender, accountid, convoID) %>%
+    count() %>%
+    group_by(gender, accountid) %>%
+    count() %>%
+    group_by(gender) %>%
+    summarise(total = sum(n, na.rm=TRUE), 
+              mean = mean(n, na.rm=TRUE), 
+              sd = sd(n, na.rm=TRUE),
+              median = median(n, na.rm=TRUE))
+
+# messages per conversation
+  convos_msg_gen <- 
+  convos_coded %>%
+    group_by(gender, accountid, convoID) %>%
+    count() %>%
+    group_by(gender) %>%
+    summarise(total = sum(n, na.rm=TRUE), 
+              mean = mean(n, na.rm=TRUE), 
+              sd = sd(n, na.rm=TRUE),
+              median = median(n, na.rm=TRUE))
+  
+# messages by type
+  convos_msgtype_gen <- 
+  convos_coded %>%
+    group_by(gender, accountid, convoID, type) %>%
+    count() %>%
+    group_by(gender, type) %>%
+    summarise(total = sum(n, na.rm=TRUE), 
+              mean = mean(n, na.rm=TRUE), 
+              sd = sd(n, na.rm=TRUE),
+              median = median(n, na.rm=TRUE))
+  
+# topics per conversation
+  convos_topics_gen <-
+  convos_coded %>%
+    group_by(gender, accountid, convoID, topic) %>%
+    count() %>%
+    group_by(gender, accountid, convoID) %>%
+    count() %>%
+    group_by(gender) %>%
+    summarise(mean = mean(n, na.rm=TRUE), 
+              sd = sd(n, na.rm=TRUE),
+              median = median(n, na.rm=TRUE))
+  
+# questions per conversation
+  convos_q_gen <-
+  convos_coded %>%
+    filter(type=="user") %>%
+    group_by(gender, accountid, convoID, qualCode) %>%
+    count() %>%
+    group_by(gender, accountid, convoID) %>%
+    mutate(msg = sum(n)) %>%
+    ungroup() %>%
+    mutate(p = (n/msg)*100) %>%
+    #filter(qualCode=="question") %>%
+    group_by(gender, qualCode) %>%
+    summarise(mean = mean(p, na.rm=TRUE), 
+              sd = sd(p, na.rm=TRUE),
+              median = median(p, na.rm=TRUE))
+```
+
+```{r convosGenAge, results="asis", include=TRUE, echo=FALSE}
+# code gender and age
+  convos_coded <- 
+  convos_coded %>%
+    filter(!is.na(age)) %>%
+    mutate(gender = ifelse(gender=="man", "Men", "Women")) %>%
+    mutate(ageCat = ifelse(age>=15 & age<=19, "15-19", 
+                           ifelse(age>=20 & age<=24, "20-24",
+                                  ifelse(age>=25 & age<=35, "25-35",
+                                         ifelse(age>=36, "36+", "??"))))
+           ) %>%
+    mutate(genAge = paste0(gender, ", ", ageCat)) %>%
+    mutate(genAge = factor(genAge, levels = c("Women, 15-19", 
+                                              "Women, 20-24",
+                                              "Women, 25-35",
+                                              "Women, 36+",
+                                              "Men, 15-19", 
+                                              "Men, 20-24",
+                                              "Men, 25-35",
+                                              "Men, 36+")))
+
+# conversations
+  convos_des_genAge <- 
+  convos_coded %>%
+    group_by(genAge, accountid, convoID) %>%
+    count() %>%
+    group_by(genAge, accountid) %>%
+    count() %>%
+    group_by(genAge) %>%
+    summarise(total = sum(n, na.rm=TRUE), 
+              mean = mean(n, na.rm=TRUE), 
+              sd = sd(n, na.rm=TRUE),
+              median = median(n, na.rm=TRUE))
+
+# messages per conversation
+  convos_msg_genAge <- 
+  convos_coded %>%
+    group_by(genAge, accountid, convoID) %>%
+    count() %>%
+    group_by(genAge) %>%
+    summarise(total = sum(n, na.rm=TRUE), 
+              mean = mean(n, na.rm=TRUE), 
+              sd = sd(n, na.rm=TRUE),
+              median = median(n, na.rm=TRUE))
+  
+# messages by type
+  convos_msgtype_genAge <- 
+  convos_coded %>%
+    group_by(genAge, accountid, convoID, type) %>%
+    count() %>%
+    group_by(genAge, type) %>%
+    summarise(total = sum(n, na.rm=TRUE), 
+              mean = mean(n, na.rm=TRUE), 
+              sd = sd(n, na.rm=TRUE),
+              median = median(n, na.rm=TRUE))
+  
+# topics per conversation
+  convos_topics_genAge <-
+  convos_coded %>%
+    group_by(genAge, accountid, convoID, topic) %>%
+    count() %>%
+    group_by(genAge, accountid, convoID) %>%
+    count() %>%
+    group_by(genAge) %>%
+    summarise(mean = mean(n, na.rm=TRUE), 
+              sd = sd(n, na.rm=TRUE),
+              median = median(n, na.rm=TRUE))
+  
+# questions per conversation
+  convos_q_genAge <-
+  convos_coded %>%
+    filter(type=="user") %>%
+    group_by(genAge, accountid, convoID, qualCode) %>%
+    count() %>%
+    group_by(genAge, accountid, convoID) %>%
+    mutate(msg = sum(n)) %>%
+    ungroup() %>%
+    mutate(p = (n/msg)*100) %>%
+    #filter(qualCode=="question") %>%
+    group_by(genAge, qualCode) %>%
+    summarise(mean = mean(p, na.rm=TRUE), 
+              sd = sd(p, na.rm=TRUE),
+              median = median(p, na.rm=TRUE))
+  
+# combine into table
+# conversations
+  convos_des_ <-
+  convos_des %>%
+    mutate(gender = "All") %>%
+    dplyr::select(gender, total, mean, sd, median)
+  
+  names(convos_des_genAge)[1] <- "gender"
+  tbl_des_genAge <- rbind(convos_des_,
+                          convos_des_gen[1, ])
+  tbl_des_genAge <- rbind(tbl_des_genAge,
+                          convos_des_genAge[4:6, ])
+  tbl_des_genAge <- rbind(tbl_des_genAge,
+                          convos_des_gen[2, ])
+  tbl_des_genAge <- rbind(tbl_des_genAge,
+                          convos_des_genAge[1:3, ])
+  
+  tbl_genAge <-
+  tbl_des_genAge %>%
+    mutate(meansd = paste0(rd1(mean), " (", rd1(sd), ")")) %>%
+    rename(`Conversations` = total,
+           `Conversations, Mean (SD)` = meansd) %>%
+    dplyr::select(-mean, -sd, -median)
+  
+# messages per conversation
+  convos_msg_ <-
+  convos_msg %>%
+    mutate(gender = "All") %>%
+    dplyr::select(gender, total, mean, sd, median)
+  
+  names(convos_msg_genAge)[1] <- "gender"
+  tbl_msg_genAge <- rbind(convos_msg_,
+                          convos_msg_gen[1, ])
+  tbl_msg_genAge <- rbind(tbl_msg_genAge,
+                          convos_msg_genAge[4:6, ])
+  tbl_msg_genAge <- rbind(tbl_msg_genAge,
+                          convos_msg_gen[2, ])
+  tbl_msg_genAge <- rbind(tbl_msg_genAge,
+                          convos_msg_genAge[1:3, ])
+  
+  tbl_msg_genAge <-
+  tbl_msg_genAge %>%
+    mutate(`Messages` = total,
+           meansd = paste0(rd1(mean), " (", rd1(sd), ")")) %>%
+    rename(`Messages per conversation, Mean (SD)` = meansd) %>%
+    dplyr::select(-mean, -sd, -median, -gender)
+  
+  tbl_genAge <- 
+  tbl_genAge %>%
+    bind_cols(tbl_msg_genAge)
+  
+# topics
+  convos_topics_ <-
+  convos_topics %>%
+    mutate(gender = "All") %>%
+    dplyr::select(gender, mean, sd, median)
+  
+  names(convos_topics_genAge)[1] <- "gender"
+  tbl_topics_genAge <- rbind(convos_topics_,
+                             convos_topics_gen[1, ])
+  tbl_topics_genAge <- rbind(tbl_topics_genAge,
+                             convos_topics_genAge[4:6, ])
+  tbl_topics_genAge <- rbind(tbl_topics_genAge,
+                             convos_topics_gen[2, ])
+  tbl_topics_genAge <- rbind(tbl_topics_genAge,
+                             convos_topics_genAge[1:3, ])
+  
+  tbl_topics_genAge <-
+  tbl_topics_genAge %>%
+    mutate(meansd = paste0(rd1(mean), " (", rd1(sd), ")")) %>%
+    rename(`Topics per conversation, Mean (SD)` = meansd) %>%
+    dplyr::select(-mean, -sd, -median, -gender)
+  
+  tbl_genAge <- 
+  tbl_genAge %>%
+    bind_cols(tbl_topics_genAge) %>%
+    dplyr::select(gender, Messages, Conversations, `Conversations, Mean (SD)`, 
+                  `Messages per conversation, Mean (SD)`,
+                  `Topics per conversation, Mean (SD)`) %>%
+    rename(Group = gender) %>%
+    mutate(Group = ifelse(Group=="man", "Men", 
+                   ifelse(Group=="woman", "Women", 
+                          Group)))
+  
+# N, gender age
+  convos_genAge_n <-
+  convos_coded %>%
+    group_by(genAge) %>%
+    distinct(accountid) %>%
+    count()
+    
+# combine Ns
+  convosN <- c(convos_all_n$n, 
+               convos_gen_n$n[convos_gen_n$gender=="man"],
+               convos_genAge_n$n[4:6], 
+               convos_gen_n$n[convos_gen_n$gender=="woman"],
+               convos_genAge_n$n[1:3])
+  
+  tbl_genAge <- 
+  tbl_genAge %>%
+    mutate(N = convosN) %>%
+    dplyr::select(Group, N, everything())
+  
+  tbl_genAge %>%
+    #mutate_all(linebreak) %>%
+    kable("latex", booktabs = T, escape = F,
+          col.names = linebreak(c("Group", 
+                                  "N",
+                                  "Messages", 
+                                  "Conversations",
+                                  "Convos/person\nMean (SD)",
+                                  "Messages/convo\nMean (SD)",
+                                  "Topics/convo\nMean (SD)")),
+          caption = "Characteristics of conversations."
+          ) %>%
+    add_footnote("Note. Sex x Age N's do not sum to 50 because of missing age values.", 
+                 notation = "none") %>%
+    kable_styling(latex_options = c("hold_position"))
+    #landscape()
+```
+
+```{r qType}
+  qtype <- 
+  convos_coded %>%
+    filter(type=="user") %>%
+    filter(qualCode=="question") %>%
+    group_by(qType) %>%
+    count() %>%
+    ungroup() %>%
+    mutate(p = (n/sum(n))*100)
+  
+  q_info <- rd1(qtype$p[qtype$qType=="causes"]+qtype$p[qtype$qType=="meaning"])
+  q_info_n <- qtype$n[qtype$qType=="causes"]+qtype$n[qtype$qType=="meaning"]
+  q_cause <- rd1(qtype$p[qtype$qType=="causes"])
+  q_meaning <- rd1(qtype$p[qtype$qType=="meaning"])
+  q_advice <- rd1(qtype$p[qtype$qType=="advice"])
+  q_access <- rd1(qtype$p[qtype$qType=="access"])
+  q_symptoms <- rd1(qtype$p[qtype$qType=="symptoms"])
+  q_other <- rd1(qtype$p[qtype$qType=="other"])
+  
+  myths <-
+  convos_coded %>%
+    filter(type=="user") %>%
+    filter(qualCode=="question") %>%
+    filter(qType=="causes" | qType=="meaning") %>%
+    group_by(myth) %>%
+    count() %>%
+    ungroup() %>%
+    filter(myth=="yes") %>%
+    mutate(p = (n/q_info_n)*100)
+  
+```
+
+
+We determined that these 100 users engaged in a total of `r convos_des$total` distinct conversations, for an average of `r rd1(convos_des$mean)` conversations per person (SD=`r rd1(convos_des$mean)`, median=`r rd1(convos_des$median)`). On average, conversations consisted of `r rd1(convos_msg$mean)` messages (SD=`r rd1(convos_msg$sd)`): `r rd1(convos_msgtype$mean[2])` messages sent by users and `r rd1(convos_msgtype$mean[1])` replies sent by agents. `r rd0(convos_q$mean[convos_q$qualCode=="question"])`% of user messages came in the form of questions or requests. We classified these questions as shown in Table \@ref(tab:quecat). Most user questions sought factual information, such as requests to define or explain concepts and questions about causes (`r q_info`%). Among the `r q_info_n` requests for information, `r rd1(myths$p)`% asked about common myths (e.g., "Is it true that if one have a kiss with someone positive, the are high chances of being affected?”).
+
+```{r quecat, results="asis", include=TRUE, echo=FALSE}
+  requests <- data.frame(Category = c("1. Requests for factual information about causes",
+                                      "2. Requests for factual information about the meaning of concepts/terms",
+                                      "3. Requests for advice",
+                                      "4. Questions about access to services and products",
+                                      "5. Reporting symptoms, requesting diagnosis",
+                                      "6. Other"),
+                         Example = c("Can someone using an implant conceive immediately?",
+                                     "What is family planning?",
+                                     "What are the best contraceptive options for avoiding pregnancy?",
+                                     "Which facility should I visit please?",
+                                     "I gave birth 1year ago from then I have never seen my periods am I safe or I have a problem?",
+                                     ""),
+                         Percent = c(q_cause, q_meaning, q_advice, q_access, 
+                                     q_symptoms, q_other))
+
+  kable(requests, "latex", booktabs = T, escape = F,
+        caption = "Distribution of user questions/requests."
+        ) %>%
+    column_spec(1, width = "7cm") %>%
+    column_spec(2, width = "6cm") %>%
+    kable_styling(latex_options = c("hold_position"))
+```
+
+\newpage
+
+Over half (`r convos_topics_multiple$n`) of the `r convos_des$total` conversations involved multiple topics. In the average conversation, users and agents discussed `r rd1(convos_topics$mean)` topics (*SD*=`r rd1(convos_topics$sd)`). As shown in Figure \@ref(fig:convosTopicsFig2), the topics that appeared most frequently in multiple-topic conversations were `r convos_topics_topics_n$topic.x[1]`, `r convos_topics_topics_n$topic.x[2]`, `r convos_topics_topics_n$topic.x[3]` (STI), `r convos_topics_topics_n$topic.x[4]`, and `r convos_topics_topics_n$topic.x[5]`. For instance, multiple-topics conversations about contraception were most frequently paired with discussions of `r convos_topics_pairs_n$topic.y[1]`, `r convos_topics_pairs_n$topic.y[2]`, and `r convos_topics_pairs_n$topic.y[3]`.
+
+```{r convosTopicsFig, include=TRUE, echo=FALSE, fig.cap="Distribution of topics coded in conversations, top 25 topics shown.", eval=FALSE}
+
+# Figure \@ref(fig:convosTopicsFig) shows the most frequently discussed topics.
+
+  convos_coded %>%
+    group_by(topic) %>%
+    count(sort=TRUE) %>%
+    ungroup() %>%
+    mutate(p = (n/sum(n))*100) %>%
+    slice(1:25) %>%
+    ggplot(., aes(x = reorder(topic, p), y = p)) +
+      geom_point(size=2.5, color="#005BE7") +
+      geom_segment(aes(x=topic,
+                       xend=topic,
+                       y=0,
+                       yend=p),
+                   linetype = "dotted",
+                   color = "#005BE7") +
+      theme_classic() +
+      theme(axis.text.x = element_text(angle = 0, hjust = 1),
+            axis.title.y = element_blank(),
+            panel.grid.major = element_blank(),
+            panel.grid.minor = element_blank(),
+            legend.position = "top") +
+      ylim(0,15) +
+      ylab("Percent") +
+      coord_flip()
+```
+
+```{r convosTopicsFig2, include=TRUE, echo=FALSE, fig.cap="Distribution of topics that appeared most frequently in multiple-topic conversations, top 25 topics shown."}
+
+  convos_topics_topics_n %>%
+    mutate(p = (appear/sum(appear))*100) %>%
+    slice(1:25) %>%
+    ggplot(., aes(x = reorder(topic.x, p), y = p)) +
+      geom_point(size=2.5, color="#005BE7") +
+      geom_segment(aes(x=topic.x,
+                       xend=topic.x,
+                       y=0,
+                       yend=p),
+                   linetype = "dotted",
+                   color = "#005BE7") +
+      theme_classic() +
+      theme(axis.text.x = element_text(angle = 0, hjust = 1),
+            axis.title.y = element_blank(),
+            panel.grid.major = element_blank(),
+            panel.grid.minor = element_blank(),
+            legend.position = "top") +
+      ylim(0,12) +
+      ylab("Percent") +
+      coord_flip()
+```
+
+\newpage
+
+# Discussion
+
+This paper presents the results of a text mining analysis of `r msgIn + msgOut` SMS messages, which users exchanged with customer success agents of *askNivi*, a free digital health service operating in Kenya and India. First and foremost, our descriptive findings from several initial iterations of the Kenya *askNivi* service are useful internally as we seek to improve and expand the product. In particular, the content analysis is informing the development of automated conversations and the creation of an ontology that links user intents and topics to a cascade of conversations, thereby allowing us to further tailor the content of *askNivi* and make automated, personalized recommendations. 
+
+Externally, this paper makes two contributions. First, the methodology presented here and documented in the data and code repository [@green:2019] offers researchers and practitioners a reproducible example of how to apply text mining techniques to text message-based interventions. We have not encountered any similar examples in the evaluation literature that is largely focused on issues of feasibility, acceptability, and efficacy. Certainly the techniques presented here could be useful for all three of these aims. Second, the analysis adds to our understanding of how our Kenyan users, in particular adolescents and young adults (mean age of 22.5 years), converse on private networks about topics related to sexual and reproductive health. 
+
+We can compare our results directly to a comprehensive qualitative analysis of text messages sent to a question and answer service in Nigeria called *MyQuestion* [@blanc:2016]. First, the most common topics on both platforms followed the dominant marketing focus. @blanc:2016 reported that *MyQuestion* began as a platform for HIV/AIDS information; *askNivi* was originally developed to help women learn about and access family planning. Both services also observed a substantial volume of messages about topics not marketed, such as health symptoms and diseases like cancer.
+
+The majority of messages sent to both services took the form of questions seeking factual information about the meaning of health concepts and causes of health conditions. In the case of *askNivi*, many users wanted to talk about different aspects of contraception, from how to find the best method to effectiveness and side effects. We found that nearly all messages not requesting information could be grouped into Blanc et al.'s classification scheme of requests for advice, questions about access to services and products, and reports of symptoms/requests for a diagnosis. 
+
+This paper adds to the *MyQuestion* analysis by @blanc:2016 because the anonymized *askNivi* messages were linked to data on users' sex and age, allowing us to disaggregate the results. Doing so revealed interesting differences across both demographic dimensions. For instance, young people chatted more about how to avoid pregnancy and practice safe sex, whereas older users asked more about symptoms and health issues like cancer. Men more often wanted information and advice on sexual health and relationships, while women more commonly sought contraception recommendations. These insights can be used to create targeted marketing campaigns and to develop content that will increase user engagement.
+
+Although we demonstrate that users who communicated in Swahili chatted about very similar topics compared to English users, a limitation of our paper is that we did not fully replicate each analysis for the Swahili corpus of messages. This is because we found that existing open source text mining tools for Swahili are less developed compared to the English-language tools. Another limitation of this study is that we may not have a representative sample of Kenyan users overall or by demographic group. While the service was free to use, mobile phone access is nearly universal in Kenya, and marketing efforts included online digital marketing *and* offline community mobilization, *askNivi* users are likely to be more educated on average compared to the Kenyan population. Furthermore, nearly two-thirds of users were female, following the initial marketing of the service. The men who took the initiative to contact *askNivi* might be different from the general population of potential male users in unmeasured ways. Despite these limitations, the similarities observed with the *MyQuestion* analysis in Nigeria is modest evidence for generalizability in an Anglophone African context. 
+
+# Conclusions
+
+The early *askNivi* experience demonstrates that young people in Kenya have a great need for accurate and reliable information on health and wellbeing that is easy to access and trustworthy, replicating what has been observed in other contexts like Nigeria [@blanc:2016]. As services like *askNivi* and *MyQuestion* increase in popularity, users go beyond the marketed offering to reveal unmet needs for information, recommendations, and referrals. Text mining is a relatively simple approach for exploring these trends and probing how user needs and interests differ across groups like age cohorts and sex. As artificial intelligence is increasingly incorporated into text message-based interventions like *askNivi*, the opportunities for intervention personalization, tailoring, and interaction will grow. Text mining is one way to better understand how users engage with these interventions and maximize what artificial intelligence has to offer.
+
+## Underlying data
+
+Zenodo: ericpgreen/asknivi-text-mining-2019: zenodo. https://doi.org/10.5281/zenodo.2653865 [@green:2019]
+
+This project contains the following underlying data:
+
+- convos_coded.csv (conversation data)
+-	df_tok_en_wordUser.csv (words by user)
+-	intents.csv (intent classifications)
+-	marketed.csv (counts of marketed intents)
+-	metadata.csv (meta data about messages)
+-	example/modifications-en.csv (custom modifications to relabel words and collapse synonyms)
+-	example/stop.csv (custom stop words)
+-	tok_bi_en.csv (bigram counts, English)
+-	tok_en.csv (single word frequency, English)
+-	tok_en_f.csv (single word frequency, females by age category, English)
+-	tok_en_g.csv (single word frequency, by gender, English)
+-	tok_en_m.csv (single word frequency, males by age category, English)
+-	tok_sw.csv (single word frequency, Swahili)
+
+### Extended data
+
+Zenodo: ericpgreen/asknivi-text-mining-2019: zenodo. https://doi.org/10.5281/zenodo.2653865 [@green:2019]
+
+This project contains the following extended data:
+
+-	README.md (list of all R packages, instructions required to reproduce the analysis, and a tutorial for running the message tokenization on a sample of raw data)
+
+Data are available under the terms of the Creative Commons Attribution-NonCommercial 4.0 International license (CC-BY-NC 4.0).
+
+## Competing interests
+
+The Nivi affiliated authors all have a financial interest in the company Nivi, which created the software that generated the data for this analysis.
+
+## Grant information
+
+This work was supported by the Bill and Melinda Gates Foundation [OPP1181398]. This work was supported by Merck for Mothers.
+
+# Acknowledgments
+
+The authors would like to acknowledge the rest of the Nivi team, including all of the current and former customer success agents who chatted with users.
+
+\newpage
+
+# References
+```{r create_r-references}
+  r_refs(file = "r-references.bib")
+```
+
+\begingroup
+\setlength{\parindent}{-0.5in}
+\setlength{\leftskip}{0.5in}
+
+<div id = "refs"></div>
+\endgroup

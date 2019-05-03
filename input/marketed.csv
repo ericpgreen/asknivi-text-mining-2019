@@ -1,0 +1,35 @@
+class,n,prop,marketed
+abortion,27,0.704225352,No
+circumcision,8,0.208659364,No
+contraception,725,18.90975483,Yes
+"contraception, cost",12,0.312989045,No
+"contraception, effectiveness",71,1.851851852,No
+"contraception, locate",18,0.469483568,No
+"contraception, method recommendation",444,11.58059468,Yes
+"contraception, side effects",763,19.9008868,Yes
+"contraception, stopping",16,0.417318727,Yes
+"men's health, erectile dysfunction",15,0.391236307,No
+"men's health, penis size",15,0.391236307,No
+"men's health, prostate",49,1.278038602,No
+mental health,3,0.078247261,No
+pregnancy,158,4.121022431,Yes
+"pregnancy, causes",25,0.652060511,No
+"pregnancy, days, when fertile",124,3.234220136,Yes
+"pregnancy, days, when safe",50,1.304121022,Yes
+"pregnancy, miscarriage",13,0.339071466,No
+"pregnancy, signs of",11,0.286906625,Yes
+"provider, locate",9,0.234741784,No
+sexual health,163,4.251434533,No
+"sexual health, having sex",203,5.294731351,No
+"sexual health, masturbation",24,0.625978091,No
+"sexual health, relationships",105,2.738654147,No
+"sexual health, sexuality",9,0.234741784,No
+"sexual health, STI",171,4.460093897,Yes
+"sexual health, STI locate test",3,0.078247261,No
+something else,133,3.46896192,No
+symptoms,167,4.355764215,No
+"symptoms, discharge",39,1.017214397,Yes
+UTI,39,1.017214397,No
+"women's health, cervical cancer",50,1.304121022,No
+"women's health, fibroids",9,0.234741784,No
+"women's health, menstruation",163,4.251434533,Yes

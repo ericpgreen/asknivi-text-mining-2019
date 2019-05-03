@@ -1,0 +1,9 @@
+.Rproj.user
+.Rhistory
+.RData
+.Ruserdata
+manuscript_cache/
+manuscript_files/
+*.docx
+*.pdf
+output/
