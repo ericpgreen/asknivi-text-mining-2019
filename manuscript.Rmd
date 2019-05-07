@@ -1587,6 +1587,7 @@ Zenodo: ericpgreen/asknivi-text-mining-2019: zenodo. https://doi.org/10.5281/zen
 This project contains the following extended data:
 
 -	README.md (list of all R packages, instructions required to reproduce the analysis, and a tutorial for running the message tokenization on a sample of raw data)
+-	manuscript.Rmd (text and code to reproduce the analysis and manuscript)
 
 Data are available under the terms of the Creative Commons Attribution-NonCommercial 4.0 International license (CC-BY-NC 4.0).
 
